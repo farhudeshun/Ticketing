@@ -2,11 +2,10 @@ const User = require("../../models/user");
 const _ = require("lodash");
 
 module.exports = {
-  // Get all users
   async getAllUsers(req, res) {
     try {
       const users = await User.findAll({
-        attributes: ["id", "name", "email"],
+        attributes: ["id", "name", "email", "isadmin"],
       });
       res.status(200).json(users);
     } catch (error) {
@@ -39,6 +38,19 @@ module.exports = {
     }
   },
   async updateUser(req, res) {
+    try {
+      const user = await User.findByPk(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      await user.update(req.body);
+      res.status(200).json(_.pick(user, ["id", "name", "email"]));
+    } catch (error) {
+      res.status(500).json({ message: "Error updating user", error });
+    }
+  },
+
+  async patchUser(req, res) {
     try {
       const user = await User.findByPk(req.params.id);
       if (!user) {
