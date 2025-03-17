@@ -2,11 +2,10 @@ const Ticket = require("../../models/tickets");
 const User = require("../../models/user");
 
 module.exports = {
-  // Create a new ticket (for users)
   async createTicket(req, res) {
     try {
       const { subject, description, priority } = req.body;
-      const userId = req.user.id; // Get the logged-in user's ID
+      const userId = req.user.id;
 
       const ticket = await Ticket.create({
         subject,
@@ -24,13 +23,12 @@ module.exports = {
     }
   },
 
-  // Get all tickets (for admins)
   async getAllTickets(req, res) {
     try {
       const tickets = await Ticket.findAll({
         include: [
           { model: User, as: "user", attributes: ["id", "name", "email"] },
-        ], // Include user details
+        ],
       });
 
       res.status(200).json(tickets);
@@ -42,7 +40,6 @@ module.exports = {
     }
   },
 
-  // Update ticket status (for admins)
   async updateTicketStatus(req, res) {
     try {
       const { id } = req.params;
@@ -68,16 +65,15 @@ module.exports = {
     }
   },
 
-  // Get tickets created by the logged-in user
   async getMyTickets(req, res) {
     try {
-      const userId = req.user.id; // Get the logged-in user's ID
+      const userId = req.user.id;
 
       const tickets = await Ticket.findAll({
         where: { userId },
         include: [
           { model: User, as: "user", attributes: ["id", "name", "email"] },
-        ], // Include user details
+        ],
       });
 
       res.status(200).json(tickets);
@@ -86,6 +82,47 @@ module.exports = {
       res
         .status(500)
         .json({ message: "Error fetching user tickets", error: error.message });
+    }
+  },
+
+  async assignTicket(req, res) {
+    try {
+      const { ticketId } = req.params;
+      const { supportId } = req.body;
+
+      console.log("Assigning support ID:", supportId);
+
+      const supportUser = await User.findOne({
+        where: { id: supportId, role: "support" },
+      });
+
+      if (!supportUser) {
+        return res.status(400).json({ message: "Invalid support user" });
+      }
+
+      const ticket = await Ticket.findByPk(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      console.log("Ticket before update:", ticket);
+
+      ticket.supportId = supportId;
+      ticket.status = "in-progress";
+      await ticket.save();
+
+      console.log("Ticket after update:", ticket);
+
+      res.status(200).json({
+        message: "Ticket assigned successfully",
+        ticket,
+      });
+    } catch (error) {
+      console.error("Error assigning ticket:", error);
+      res.status(500).json({
+        message: "Error assigning ticket",
+        error: error.message,
+      });
     }
   },
 };

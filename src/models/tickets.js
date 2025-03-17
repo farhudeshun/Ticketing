@@ -23,9 +23,14 @@ const Ticket = sequelize.define("Ticket", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  supportId: {
+    type: DataTypes.INTEGER,
+    allowNull: true, // This field will be used when a ticket is assigned to support
+  },
 });
 
-// Define the association between Ticket and User
+// Define associations
 Ticket.belongsTo(User, { foreignKey: "userId", as: "user" });
+Ticket.belongsTo(User, { foreignKey: "supportId", as: "support" });
 
 module.exports = Ticket;

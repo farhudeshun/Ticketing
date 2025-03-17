@@ -40,8 +40,8 @@ async function isAdmin(req, res, next) {
     return res.status(400).send("User not authenticated");
   }
 
-  console.log("User isadmin value:", req.user.isadmin);
-  if (!req.user.isadmin) {
+  console.log("User role:", req.user.role);
+  if (req.user.role !== "admin") {
     console.error("User is not an admin");
     return res.status(403).send("Access denied. Admins only");
   }

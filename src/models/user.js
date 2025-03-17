@@ -7,10 +7,14 @@ const User = sequelize.define(
     email: { type: DataTypes.STRING, allowNull: false, unique: true },
     name: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
-    isadmin: { type: DataTypes.BOOLEAN, defaultValue: false },
+    role: {
+      type: DataTypes.ENUM("admin", "support", "user"),
+      allowNull: false,
+      defaultValue: "user",
+    },
   },
   {
-    timestamps: true, // Equivalent to mongoose-timestamp plugin
+    timestamps: true,
   }
 );
 

@@ -4,15 +4,18 @@ const _ = require("lodash");
 module.exports = {
   async getAllUsers(req, res) {
     try {
+      // Get all users, including their roles
       const users = await User.findAll({
-        attributes: ["id", "name", "email", "isadmin"],
+        attributes: ["id", "name", "email", "role", "isadmin"], // Add role to attributes
       });
+
       res.status(200).json(users);
     } catch (error) {
       console.error("Error fetching users:", error);
-      res
-        .status(500)
-        .json({ message: "Error fetching users", error: error.message });
+      res.status(500).json({
+        message: "Error fetching users",
+        error: error.message,
+      });
     }
   },
 
