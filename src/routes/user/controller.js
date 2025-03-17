@@ -12,11 +12,10 @@ module.exports = new (class extends controller {
 
   async me(req, res) {
     try {
-      // Prefer ID from params, fallback to logged-in user
       const userId = req.params.id || req.user?.id;
 
       const user = await User.findByPk(userId, {
-        attributes: ["id", "name", "email", "password"], // Ensure only necessary fields
+        attributes: ["id", "name", "email", "password"],
       });
 
       if (!user) {

@@ -40,7 +40,7 @@ module.exports = new (class extends controller {
 
       console.log("Updating user role...");
       user.role = role;
-      await user.save(); // Save the updated role
+      await user.save();
 
       console.log("User role updated successfully, sending response...");
       return res.status(200).json({

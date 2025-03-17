@@ -47,7 +47,6 @@ module.exports = new (class extends controller {
       });
     }
 
-    // Generate token with the isadmin flag
     const token = jwt.sign(
       { _id: user.id, isadmin: user.isadmin },
       config.get("jwt_key")

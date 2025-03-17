@@ -59,21 +59,42 @@ module.exports = {
         .json({ message: "Error fetching user tickets", error: error.message });
     }
   },
+  async getAssignedTickets(req, res) {
+    try {
+      const supportId = req.user.id;
+
+      const tickets = await Ticket.findAll({
+        where: { supportId },
+        include: [
+          { model: User, as: "user", attributes: ["id", "name", "email"] },
+        ],
+      });
+
+      if (tickets.length === 0) {
+        return res.status(404).json({ message: "No assigned tickets found" });
+      }
+
+      res.status(200).json(tickets);
+    } catch (error) {
+      console.error("Error fetching assigned tickets:", error);
+      res.status(500).json({
+        message: "Error fetching assigned tickets",
+        error: error.message,
+      });
+    }
+  },
 
   async updateTicket(req, res) {
     try {
       const { id } = req.params;
       const { status, supportId } = req.body;
 
-      // Find the ticket by its ID
       const ticket = await Ticket.findByPk(id);
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
 
-      // If supportId is provided, assign the support user
       if (supportId) {
-        // Check if the support user exists and has the correct role
         const supportUser = await User.findOne({
           where: { id: supportId, role: "support" },
         });
@@ -81,38 +102,26 @@ module.exports = {
           return res.status(400).json({ message: "Invalid support user" });
         }
 
-        // Check if the ticket is already assigned to the same support user
         if (ticket.supportId === supportId) {
-          return res
-            .status(400)
-            .json({
-              message: "Ticket is already assigned to this support user",
-            });
+          return res.status(400).json({
+            message: "Ticket is already assigned to this support user",
+          });
         }
-
-        // Assign the support user to the ticket
         ticket.supportId = supportId;
 
-        // Set status to "in-progress" if the ticket was initially "open"
         if (ticket.status === "open") {
           ticket.status = "in-progress";
         }
       }
-
-      // If a status is provided, update the ticket's status
       if (status) {
         ticket.status = status;
       }
-
-      // If no status is provided and ticket was not assigned yet, set status to "open"
       if (!status && !ticket.status) {
         ticket.status = "open";
       }
 
-      // Save the updated ticket
       await ticket.save();
 
-      // Respond with the updated ticket
       res.status(200).json({
         message: "Ticket updated successfully",
         ticket: {
