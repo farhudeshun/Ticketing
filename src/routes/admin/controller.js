@@ -2,56 +2,54 @@ const controller = require("../controller");
 const User = require("../../models/user");
 
 module.exports = new (class extends controller {
-  // Admin Dashboard (existing method)
   async dashboard(req, res) {
     res.send("admin dashboard");
   }
 
-  // Admin-only: Update the role of a user
   async updateUserRole(req, res) {
     try {
       const { id } = req.params;
-      const { role } = req.body; // The new role to assign to the user
+      const { role } = req.body;
 
-      // Validate the role
+      console.log("Received request to update role:", { id, role });
+
       if (!role || !["admin", "support", "user"].includes(role)) {
+        console.log("Invalid role detected");
         return res.status(400).json({ message: "Invalid role" });
       }
 
-      // Check if the user exists
       const user = await User.findByPk(id);
       if (!user) {
+        console.log("User not found");
         return res.status(404).json({ message: "User not found" });
       }
 
       if (user.id === req.user.id) {
+        console.log("User attempted to change their own role");
         return res
           .status(403)
           .json({ message: "You cannot change your own role" });
       }
 
-      // Update the user's role and return the updated user data
-      const [rowsUpdated, updatedRows] = await User.update(
-        { role },
-        {
-          where: { id },
-          returning: true, // PostgreSQL feature to return the updated rows
-        }
-      );
-
-      if (rowsUpdated === 0) {
-        return res.status(400).json({ message: "Role update failed" });
+      if (user.role === role) {
+        console.log(`User already has the role: ${role}`);
+        return res
+          .status(400)
+          .json({ message: `User already has the ${role} role` });
       }
 
-      const updatedUser = updatedRows[0];
+      console.log("Updating user role...");
+      user.role = role;
+      await user.save(); // Save the updated role
 
+      console.log("User role updated successfully, sending response...");
       return res.status(200).json({
-        message: `User role updated to ${updatedUser.role}`,
+        message: `User role updated to ${user.role}`,
         user: {
-          id: updatedUser.id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role,
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
         },
       });
     } catch (error) {

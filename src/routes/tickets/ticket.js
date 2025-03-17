@@ -10,7 +10,7 @@ router.post("/", isLoggedIn, TicketController.createTicket);
 router.get("/", isLoggedIn, isAdmin, TicketController.getAllTickets);
 
 // Update ticket status (for admins)
-router.put("/:id", isLoggedIn, isAdmin, TicketController.updateTicketStatus);
+router.put("/:id", isLoggedIn, isAdmin, TicketController.updateTicket);
 
 // Get tickets created by the logged-in user
 router.get("/my-tickets", isLoggedIn, TicketController.getMyTickets);
@@ -20,7 +20,7 @@ router.put(
   "/assign/:ticketId",
   isLoggedIn,
   isAdmin,
-  TicketController.assignTicket
+  TicketController.updateTicket
 );
 
 module.exports = router;
