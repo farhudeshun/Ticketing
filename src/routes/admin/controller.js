@@ -1,11 +1,16 @@
-const controller = require("../controller");
+const controller = require("../../routes/controller");
 const User = require("../../models/user");
+const Ticket = require("../../models/tickets");
+const { isLoggedIn, isAdmin } = require("../../middlewares/auth");
+const checkRole = require("../../middlewares/checkRoles");
 
 module.exports = new (class extends controller {
+  // Admin Dashboard (only accessible by admin)
   async dashboard(req, res) {
     res.send("admin dashboard");
   }
 
+  // Update User Role (only accessible by admin)
   async updateUserRole(req, res) {
     try {
       const { id } = req.params;
@@ -57,6 +62,45 @@ module.exports = new (class extends controller {
       res
         .status(500)
         .json({ message: "Error updating user role", error: error.message });
+    }
+  }
+
+  // Get All Tickets (for Admin only)
+  async getAllTickets(req, res) {
+    try {
+      // Fetch all tickets for the admin
+      const tickets = await Ticket.findAll(); // Adjust this query as needed based on your database
+      return res.status(200).json({ tickets });
+    } catch (error) {
+      console.error("Error fetching tickets:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch tickets", error });
+    }
+  }
+
+  // Update Ticket Status (for Admin only)
+  async updateTicketStatus(req, res) {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+      const ticket = await Ticket.findByPk(id);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      ticket.status = status;
+      await ticket.save();
+      return res.status(200).json({
+        message: `Ticket status updated to ${status}`,
+        ticket,
+      });
+    } catch (error) {
+      console.error("Error updating ticket status:", error);
+      return res
+        .status(500)
+        .json({ message: "Error updating ticket status", error });
     }
   }
 })();
