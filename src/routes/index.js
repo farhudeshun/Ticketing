@@ -8,13 +8,20 @@ const { isLoggedIn, isAdmin } = require("../middlewares/auth");
 const error = require("../middlewares/error");
 const ticketRoutes = require("./tickets/ticket");
 
+const BASE_PATH = "/api/v1";
+
 router.use(express.json());
 
-router.use("/auth", authRouter);
-router.use("/user", isLoggedIn, userRouter);
-router.use("/admin", isLoggedIn, isAdmin, adminRouter);
-router.use("/users", usersRoutes);
+router.use(BASE_PATH + "/auth", authRouter);
+
+router.use(BASE_PATH + "/user", isLoggedIn, userRouter);
+
+router.use(BASE_PATH + "/admin", isLoggedIn, isAdmin, adminRouter);
+
+router.use(BASE_PATH + "/users", isLoggedIn, isAdmin, usersRoutes);
+
 router.use(error);
-router.use("/tickets", ticketRoutes);
+
+router.use(BASE_PATH + "/tickets", ticketRoutes);
 
 module.exports = router;

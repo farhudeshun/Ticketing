@@ -1,24 +1,28 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const config = require("config");
 const router = require("./src/routes/");
+const mongoose = require("mongoose");
 
-const sequelize = require("./config/database");
+mongoose.set("debug", (coll, method, query) => {
+  console.log(`Mongoose ${method} on ${coll}: ${JSON.stringify(query)}`);
+});
 
-require("./startup/config")(app, express);
-require("./startup/db")();
-require("./startup/logging")();
+mongoose.connection.on("connected", () => {
+  console.log("✅ Mongoose connected to DB");
+});
 
-sequelize
-  .sync()
-  .then(() => {
-    console.log("✅ Models synced with the database.");
-  })
-  .catch((error) => {
-    console.error("❌ Error syncing models:", error);
-  });
+mongoose.connection.on("error", (err) => {
+  console.error("❌ Mongoose connection error:", err);
+});
 
-app.use("/api", router);
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+app.use("/", router);
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`));

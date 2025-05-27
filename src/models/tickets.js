@@ -1,36 +1,60 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../../config/database");
-const User = require("./user");
+const mongoose = require("mongoose");
 
-const Ticket = sequelize.define("Ticket", {
-  subject: {
-    type: DataTypes.STRING,
-    allowNull: false,
+const ticketSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["open", "in-progress", "closed"],
+      default: "open",
+    },
+    priority: {
+      type: String,
+      enum: ["low", "medium", "high"],
+      default: "low",
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    assignees: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    primarySupportId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: false,
-  },
-  priority: {
-    type: DataTypes.STRING,
-    defaultValue: "Medium",
-  },
-  status: {
-    type: DataTypes.ENUM("open", "in-progress", "closed"),
-    defaultValue: "open",
-  },
-  userId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  supportId: {
-    type: DataTypes.INTEGER,
-    allowNull: true, // This field will be used when a ticket is assigned to support
-  },
+  { timestamps: true }
+);
+
+// Middleware to ensure assignees are support staff
+ticketSchema.pre("save", async function (next) {
+  if (this.isModified("assignees")) {
+    const User = mongoose.model("User");
+    const assignees = await User.find({
+      _id: { $in: this.assignees },
+      role: "support",
+    });
+
+    if (assignees.length !== this.assignees.length) {
+      throw new Error("All assignees must be support staff");
+    }
+  }
+  next();
 });
 
-// Define associations
-Ticket.belongsTo(User, { foreignKey: "userId", as: "user" });
-Ticket.belongsTo(User, { foreignKey: "supportId", as: "support" });
-
-module.exports = Ticket;
+module.exports = mongoose.model("Ticket", ticketSchema);

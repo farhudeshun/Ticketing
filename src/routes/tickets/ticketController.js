@@ -5,14 +5,14 @@ module.exports = {
   async createTicket(req, res) {
     try {
       const { subject, description, priority } = req.body;
-      const userId = req.user.id;
+      const userId = req.user._id;
 
       const ticket = await Ticket.create({
         subject,
         description,
         priority,
         userId,
-        status: "open", // Ensure default status
+        status: "open",
       });
 
       return res
@@ -28,14 +28,10 @@ module.exports = {
 
   async getAllTickets(req, res) {
     try {
-      // This route is for admins only (middleware should enforce this)
-      const tickets = await Ticket.findAll({
-        include: [
-          { model: User, as: "user", attributes: ["id", "name", "email"] },
-          { model: User, as: "support", attributes: ["id", "name", "email"] },
-        ],
-        order: [["createdAt", "DESC"]],
-      });
+      const tickets = await Ticket.find()
+        .populate("userId", "name email")
+        .populate("supportId", "name email")
+        .sort("-createdAt");
       return res.status(200).json(tickets);
     } catch (error) {
       console.error("Error fetching tickets:", error);
@@ -47,22 +43,18 @@ module.exports = {
 
   async getTicketById(req, res) {
     try {
-      const ticket = await Ticket.findByPk(req.params.id, {
-        include: [
-          { model: User, as: "user", attributes: ["id", "name", "email"] },
-          { model: User, as: "support", attributes: ["id", "name", "email"] },
-        ],
-      });
+      const ticket = await Ticket.findById(req.params.id)
+        .populate("userId", "name email")
+        .populate("supportId", "name email");
 
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
 
-      // Authorization: allow if admin, or if the ticket belongs to the user, or if the user is assigned as support.
       if (
         req.user.role !== "admin" &&
-        req.user.id !== ticket.userId &&
-        req.user.id !== ticket.supportId
+        req.user._id.toString() !== ticket.userId.toString() &&
+        req.user._id.toString() !== ticket.supportId?.toString()
       ) {
         return res.status(403).json({ message: "Unauthorized access" });
       }
@@ -78,17 +70,12 @@ module.exports = {
 
   async getMyTickets(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user._id;
 
-      const tickets = await Ticket.findAll({
-        where: { userId },
-        include: [
-          { model: User, as: "support", attributes: ["id", "name", "email"] },
-        ],
-        order: [["createdAt", "DESC"]],
-      });
+      const tickets = await Ticket.find({ userId })
+        .populate("supportId", "name email")
+        .sort("-createdAt");
 
-      // Even if no tickets are found, return an empty array (not access denied)
       return res.status(200).json(tickets);
     } catch (error) {
       console.error("Error fetching user tickets:", error);
@@ -100,22 +87,17 @@ module.exports = {
 
   async getAssignedTickets(req, res) {
     try {
-      const supportId = req.user.id;
+      const supportId = req.user._id;
 
-      // This route is for support users; if a non-support user tries to access, return 403
       if (req.user.role !== "support") {
         return res
           .status(403)
           .json({ message: "Access denied. Support role required" });
       }
 
-      const tickets = await Ticket.findAll({
-        where: { supportId },
-        include: [
-          { model: User, as: "user", attributes: ["id", "name", "email"] },
-        ],
-        order: [["createdAt", "DESC"]],
-      });
+      const tickets = await Ticket.find({ supportId })
+        .populate("userId", "name email")
+        .sort("-createdAt");
 
       if (tickets.length === 0) {
         return res.status(404).json({ message: "No assigned tickets found" });
@@ -124,12 +106,10 @@ module.exports = {
       return res.status(200).json(tickets);
     } catch (error) {
       console.error("Error fetching assigned tickets:", error);
-      return res
-        .status(500)
-        .json({
-          message: "Error fetching assigned tickets",
-          error: error.message,
-        });
+      return res.status(500).json({
+        message: "Error fetching assigned tickets",
+        error: error.message,
+      });
     }
   },
 
@@ -138,13 +118,15 @@ module.exports = {
       const { id } = req.params;
       const { status, supportId } = req.body;
 
-      const ticket = await Ticket.findByPk(id);
+      const ticket = await Ticket.findById(id);
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
 
-      // Only admin or the support assigned to the ticket can update it
-      if (req.user.role !== "admin" && req.user.id !== ticket.supportId) {
+      if (
+        req.user.role !== "admin" &&
+        req.user._id.toString() !== ticket.supportId?.toString()
+      ) {
         return res
           .status(403)
           .json({ message: "Unauthorized to update this ticket" });
@@ -152,18 +134,17 @@ module.exports = {
 
       if (supportId) {
         const supportUser = await User.findOne({
-          where: { id: supportId, role: "support" },
+          _id: supportId,
+          role: "support",
         });
         if (!supportUser) {
           return res.status(400).json({ message: "Invalid support user" });
         }
 
-        if (ticket.supportId === supportId) {
-          return res
-            .status(400)
-            .json({
-              message: "Ticket is already assigned to this support user",
-            });
+        if (ticket.supportId?.toString() === supportId) {
+          return res.status(400).json({
+            message: "Ticket is already assigned to this support user",
+          });
         }
         ticket.supportId = supportId;
         if (ticket.status === "open") {
@@ -172,7 +153,6 @@ module.exports = {
       }
 
       if (status) {
-        // Only admin can set the status to 'closed'
         if (status === "closed" && req.user.role !== "admin") {
           return res
             .status(403)
@@ -187,19 +167,13 @@ module.exports = {
 
       await ticket.save();
 
+      const updatedTicket = await Ticket.findById(id)
+        .populate("userId", "name email")
+        .populate("supportId", "name email");
+
       return res.status(200).json({
         message: "Ticket updated successfully",
-        ticket: {
-          id: ticket.id,
-          subject: ticket.subject,
-          description: ticket.description,
-          priority: ticket.priority,
-          status: ticket.status,
-          userId: ticket.userId,
-          supportId: ticket.supportId,
-          createdAt: ticket.createdAt,
-          updatedAt: ticket.updatedAt,
-        },
+        ticket: updatedTicket,
       });
     } catch (error) {
       console.error("Error updating ticket:", error);
@@ -211,18 +185,20 @@ module.exports = {
 
   async deleteTicket(req, res) {
     try {
-      const ticket = await Ticket.findByPk(req.params.id);
+      const ticket = await Ticket.findById(req.params.id);
+
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
 
-      // Only admins can delete tickets
       if (req.user.role !== "admin") {
-        return res.status(403).json({ message: "Access denied. Admins only" });
+        return res
+          .status(403)
+          .json({ message: "Only admins can delete tickets" });
       }
 
-      await ticket.destroy();
-      return res.status(204).json({ message: "Ticket deleted successfully" });
+      await Ticket.findByIdAndDelete(req.params.id);
+      return res.status(204).send();
     } catch (error) {
       console.error("Error deleting ticket:", error);
       return res
@@ -231,10 +207,9 @@ module.exports = {
     }
   },
 
-  // (Optional) Admin-only full update of a ticket
   async adminUpdateTicket(req, res) {
     try {
-      const ticket = await Ticket.findByPk(req.params.id);
+      const ticket = await Ticket.findById(req.params.id);
       if (!ticket) {
         return res.status(404).json({ message: "Ticket not found" });
       }
@@ -248,7 +223,8 @@ module.exports = {
 
       if (supportId) {
         const support = await User.findOne({
-          where: { id: supportId, role: "support" },
+          _id: supportId,
+          role: "support",
         });
         if (!support) {
           return res.status(400).json({ message: "Invalid support user" });
@@ -257,15 +233,115 @@ module.exports = {
       }
 
       await ticket.save();
+
+      const updatedTicket = await Ticket.findById(req.params.id)
+        .populate("userId", "name email")
+        .populate("supportId", "name email");
+
       return res.status(200).json({
         message: "Ticket updated by admin successfully",
-        ticket,
+        ticket: updatedTicket,
       });
     } catch (error) {
       console.error("Admin ticket update error:", error);
       return res
         .status(500)
         .json({ message: "Error updating ticket", error: error.message });
+    }
+  },
+
+  async assignToSupport(req, res) {
+    try {
+      const { ticketId } = req.params;
+      const { supportId } = req.body;
+
+      // Find the ticket
+      const ticket = await Ticket.findById(ticketId);
+      if (!ticket) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+
+      // Find the support user
+      const supportUser = await User.findOne({
+        _id: supportId,
+        role: "support",
+      });
+      if (!supportUser) {
+        return res.status(400).json({ message: "Invalid support user" });
+      }
+
+      // Add ticket to support user's assigned tickets
+      if (!supportUser.assignedTickets.includes(ticketId)) {
+        supportUser.assignedTickets.push(ticketId);
+        await supportUser.save();
+      }
+
+      // Update ticket status if it's open
+      if (ticket.status === "open") {
+        ticket.status = "in-progress";
+        await ticket.save();
+      }
+
+      const updatedUser = await User.findById(supportId)
+        .select("-password")
+        .populate("assignedTickets");
+
+      return res.status(200).json({
+        message: "Ticket assigned successfully",
+        supportUser: {
+          _id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          assignedTickets: updatedUser.assignedTickets,
+        },
+      });
+    } catch (error) {
+      console.error("Error assigning ticket:", error);
+      return res.status(500).json({
+        message: "Error assigning ticket",
+        error: error.message,
+      });
+    }
+  },
+
+  async unassignFromSupport(req, res) {
+    try {
+      const { ticketId } = req.params;
+      const { supportId } = req.body;
+
+      // Find the support user
+      const supportUser = await User.findOne({
+        _id: supportId,
+        role: "support",
+      });
+      if (!supportUser) {
+        return res.status(400).json({ message: "Invalid support user" });
+      }
+
+      supportUser.assignedTickets = supportUser.assignedTickets.filter(
+        (id) => id.toString() !== ticketId
+      );
+      await supportUser.save();
+
+      const updatedUser = await User.findById(supportId)
+        .select("-password")
+        .populate("assignedTickets");
+
+      return res.status(200).json({
+        message: "Ticket unassigned successfully",
+        supportUser: {
+          _id: updatedUser._id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          assignedTickets: updatedUser.assignedTickets,
+        },
+      });
+    } catch (error) {
+      console.error("Error unassigning ticket:", error);
+      return res.status(500).json({
+        message: "Error unassigning ticket",
+        error: error.message,
+      });
     }
   },
 };

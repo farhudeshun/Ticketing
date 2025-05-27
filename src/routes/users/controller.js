@@ -1,113 +1,126 @@
 const User = require("../../models/user");
 const _ = require("lodash");
+const bcrypt = require("bcrypt");
 
-module.exports = {
+module.exports = new (class {
   async getAllUsers(req, res) {
     try {
-      // Get all users, including their roles
-      const users = await User.findAll({
-        attributes: ["id", "name", "email", "role", "isadmin"], // Add role to attributes
-      });
-
-      res.status(200).json(users);
+      const users = await User.find({}, "-password");
+      res.json(users);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      res.status(500).json({
-        message: "Error fetching users",
-        error: error.message,
-      });
+      res
+        .status(500)
+        .json({ message: "Error fetching users", error: error.message });
     }
-  },
+  }
 
   async getUserById(req, res) {
     try {
-      const user = await User.findByPk(req.params.id, {
-        attributes: ["id", "name", "email"],
-      });
+      const user = await User.findById(req.params.id).select("-password");
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      res.status(200).json(user);
+      res.json(user);
     } catch (error) {
-      res.status(500).json({ message: "Error fetching user", error });
+      res
+        .status(500)
+        .json({ message: "Error fetching user", error: error.message });
     }
-  },
+  }
 
   async createUser(req, res) {
     try {
-      const user = await User.create(req.body);
-      res.status(201).json(_.pick(user, ["id", "name", "email"]));
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+      const user = await User.create({
+        ...req.body,
+        password: hashedPassword,
+      });
+
+      res.status(201).json(_.pick(user, ["_id", "name", "email"]));
     } catch (error) {
-      res.status(500).json({ message: "Error creating user", error });
+      res
+        .status(500)
+        .json({ message: "Error creating user", error: error.message });
     }
-  },
+  }
 
   async updateUser(req, res) {
     try {
-      const user = await User.findByPk(req.params.id);
-      if (!user) {
+      if (req.user._id.toString() !== req.params.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { name, email } = req.body;
+      const updateData = { name, email };
+
+      const updatedUser = await User.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).select("-password");
+
+      if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Ensure that users can only update their own data (not role or other sensitive data)
-      if (user.id !== req.user.id && req.user.role !== "admin") {
-        return res.status(403).json({
-          message: "You can only update your own profile.",
-        });
-      }
-
-      // Optionally, filter out role and isadmin fields to prevent update via user
-      const updateData = _.omit(req.body, ["role", "isadmin"]);
-      await user.update(updateData);
-
-      res.status(200).json(_.pick(user, ["id", "name", "email"]));
+      return res.json(updatedUser);
     } catch (error) {
-      res.status(500).json({ message: "Error updating user", error });
+      return res
+        .status(500)
+        .json({ message: "Error updating user", error: error.message });
     }
-  },
+  }
 
   async patchUser(req, res) {
     try {
-      const user = await User.findByPk(req.params.id);
+      const user = await User.findById(req.params.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Ensure that users can only update their own data (not role or other sensitive data)
-      if (user.id !== req.user.id && req.user.role !== "admin") {
+      if (
+        user._id.toString() !== req.user._id.toString() &&
+        req.user.role !== "admin"
+      ) {
         return res.status(403).json({
           message: "You can only update your own profile.",
         });
       }
 
-      // Optionally, filter out role and isadmin fields to prevent update via user
-      const updateData = _.omit(req.body, ["role", "isadmin"]);
-      await user.update(updateData);
+      const updateData = _.omit(req.body, ["role", "password"]);
+      const updatedUser = await User.findByIdAndUpdate(
+        req.params.id,
+        updateData,
+        { new: true }
+      ).select("-password");
 
-      res.status(200).json(_.pick(user, ["id", "name", "email"]));
+      res.status(200).json(_.pick(updatedUser, ["_id", "name", "email"]));
     } catch (error) {
-      res.status(500).json({ message: "Error updating user", error });
+      res
+        .status(500)
+        .json({ message: "Error updating user", error: error.message });
     }
-  },
+  }
 
   async deleteUser(req, res) {
     try {
-      const user = await User.findByPk(req.params.id);
-      if (!user) {
+      if (req.user._id.toString() !== req.params.id) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+      if (!deletedUser) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Ensure that users can only delete their own account
-      if (user.id !== req.user.id && req.user.role !== "admin") {
-        return res.status(403).json({
-          message: "You can only delete your own account.",
-        });
-      }
-
-      await user.destroy();
-      res.status(204).json({ message: "User deleted successfully" });
+      return res.status(204).send();
     } catch (error) {
-      res.status(500).json({ message: "Error deleting user", error });
+      return res
+        .status(500)
+        .json({ message: "Error deleting user", error: error.message });
     }
-  },
-};
+  }
+})();

@@ -1,14 +1,11 @@
-module.exports = function () {
-  const { Sequelize, DataTypes } = require("sequelize");
-  const sequelize = new Sequelize("postgresProject", "postgres", "password", {
-    host: "localhost",
-    dialect: "postgres",
-  });
+const mongoose = require("mongoose");
 
-  sequelize
-    .authenticate()
-    .then(() => console.log("✅ PostgreSQL connected successfully!"))
-    .catch((err) =>
-      console.error("❌ Database connection failed:", err.message)
-    );
+module.exports = function () {
+  mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ MongoDB connected successfully!"))
+    .catch((err) => {
+      console.error("❌ Database connection failed:", err.message);
+      process.exit(1);
+    });
 };

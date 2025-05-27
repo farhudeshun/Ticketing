@@ -6,7 +6,7 @@ const jwt = require("jsonwebtoken");
 
 module.exports = new (class extends controller {
   async register(req, res) {
-    let user = await this.User.findOne({ where: { email: req.body.email } });
+    let user = await this.User.findOne({ email: req.body.email });
     if (user) {
       return this.response({
         res,
@@ -29,7 +29,7 @@ module.exports = new (class extends controller {
   }
 
   async login(req, res) {
-    const user = await this.User.findOne({ where: { email: req.body.email } });
+    const user = await this.User.findOne({ email: req.body.email });
     if (!user) {
       return this.response({
         res,
@@ -38,7 +38,12 @@ module.exports = new (class extends controller {
       });
     }
 
-    const isValid = await bcrypt.compare(req.body.password, user.password);
+    // If the password in DB is not hashed, compare directly
+    const isValid =
+      user.password.startsWith("$2b$") || user.password.startsWith("$2a$")
+        ? await bcrypt.compare(req.body.password, user.password)
+        : req.body.password === user.password;
+
     if (!isValid) {
       return this.response({
         res,
@@ -48,7 +53,7 @@ module.exports = new (class extends controller {
     }
 
     const token = jwt.sign(
-      { _id: user.id, isadmin: user.isadmin },
+      { _id: user._id, role: user.role },
       config.get("jwt_key")
     );
 

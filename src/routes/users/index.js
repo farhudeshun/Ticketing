@@ -4,7 +4,7 @@ const controller = require("./controller");
 const { isLoggedIn, isAdmin } = require("../../middlewares/auth");
 
 // Only admins can access this route
-router.get("/", isLoggedIn, isAdmin, controller.getAllUsers);
+router.get("/", isAdmin, controller.getAllUsers);
 
 // Optionally, protect other routes similarly if needed:
 router.get("/:id", isLoggedIn, controller.getUserById);

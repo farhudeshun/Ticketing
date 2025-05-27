@@ -3,23 +3,25 @@ const jwt = require("jsonwebtoken");
 const User = require("./../models/user");
 
 async function isLoggedIn(req, res, next) {
-  // Log all headers to see what is being sent
   console.log("Request headers:", req.headers);
 
-  // Check for the token in the expected header
-  const token = req.header("jwt_key");
-  if (!token) {
-    console.error("No token provided in jwt_key header.");
+  // Check for Authorization header first
+  const authHeader = req.header("Authorization");
+  if (!authHeader) {
+    console.error("No Authorization header provided.");
     return res.status(401).send("Access denied");
   }
 
+  // Extract the token from Bearer format
+  const token = authHeader.startsWith("Bearer ")
+    ? authHeader.slice(7)
+    : authHeader;
+
   try {
-    // Verify and decode the token
     const decoded = jwt.verify(token, config.get("jwt_key"));
     console.log("Decoded token payload:", decoded);
 
-    // Find the user based on the decoded _id
-    const user = await User.findOne({ where: { id: decoded._id } });
+    const user = await User.findById(decoded._id);
     if (!user) {
       console.error("User not found for token _id:", decoded._id);
       return res.status(401).send("User not found");
@@ -46,7 +48,7 @@ async function isAdmin(req, res, next) {
     return res.status(403).send("Access denied. Admins only");
   }
 
-  next(); // Proceed to the route handler if user is an admin
+  next();
 }
 
 module.exports = {
