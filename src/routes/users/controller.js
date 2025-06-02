@@ -106,9 +106,9 @@ module.exports = new (class {
 
   async deleteUser(req, res) {
     try {
-      if (req.user._id.toString() !== req.params.id) {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
+      // if (req.user._id.toString() !== req.params.id) {
+      //   return res.status(403).json({ message: "Unauthorized" });
+      // }
 
       const deletedUser = await User.findByIdAndDelete(req.params.id);
 
@@ -116,7 +116,7 @@ module.exports = new (class {
         return res.status(404).json({ message: "User not found" });
       }
 
-      return res.status(204).send();
+      return res.status(200).json({ message: "user deleted", deletedUser });
     } catch (error) {
       return res
         .status(500)

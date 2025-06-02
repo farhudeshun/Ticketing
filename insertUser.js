@@ -9,8 +9,8 @@ mongoose.connect("mongodb://localhost:27017/ticketing", {
 async function createUser() {
   try {
     const newUser = new User({
-      email: "user@user.com",
-      name: "taghi",
+      email: "userr@userr.com",
+      name: "jaghi",
       password: "user",
       role: "user",
     });

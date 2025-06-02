@@ -6,7 +6,7 @@ module.exports = new (class extends controller {
   async dashboard(req, res) {
     res.json({
       message: "User Dashboard",
-      user: req.user, // The toJSON method will handle hiding assignedTickets
+      user: req.user,
     });
   }
 

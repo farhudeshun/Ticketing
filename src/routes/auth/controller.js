@@ -38,7 +38,6 @@ module.exports = new (class extends controller {
       });
     }
 
-    // If the password in DB is not hashed, compare directly
     const isValid =
       user.password.startsWith("$2b$") || user.password.startsWith("$2a$")
         ? await bcrypt.compare(req.body.password, user.password)
