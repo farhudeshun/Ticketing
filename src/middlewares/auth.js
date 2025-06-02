@@ -5,14 +5,12 @@ const User = require("./../models/user");
 async function isLoggedIn(req, res, next) {
   console.log("Request headers:", req.headers);
 
-  // Check for Authorization header first
   const authHeader = req.header("Authorization");
   if (!authHeader) {
     console.error("No Authorization header provided.");
     return res.status(401).send("Access denied");
   }
 
-  // Extract the token from Bearer format
   const token = authHeader.startsWith("Bearer ")
     ? authHeader.slice(7)
     : authHeader;

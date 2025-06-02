@@ -20,8 +20,8 @@ router.use(BASE_PATH + "/admin", isLoggedIn, isAdmin, adminRouter);
 
 router.use(BASE_PATH + "/users", isLoggedIn, isAdmin, usersRoutes);
 
-router.use(error);
-
 router.use(BASE_PATH + "/tickets", ticketRoutes);
+
+router.use(error);
 
 module.exports = router;

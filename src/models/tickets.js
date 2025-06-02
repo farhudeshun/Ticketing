@@ -26,13 +26,7 @@ const ticketSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    assignees: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    primarySupportId: {
+    supportId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
@@ -40,21 +34,5 @@ const ticketSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-// Middleware to ensure assignees are support staff
-ticketSchema.pre("save", async function (next) {
-  if (this.isModified("assignees")) {
-    const User = mongoose.model("User");
-    const assignees = await User.find({
-      _id: { $in: this.assignees },
-      role: "support",
-    });
-
-    if (assignees.length !== this.assignees.length) {
-      throw new Error("All assignees must be support staff");
-    }
-  }
-  next();
-});
 
 module.exports = mongoose.model("Ticket", ticketSchema);

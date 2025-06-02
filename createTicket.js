@@ -20,7 +20,7 @@ async function createSampleTickets() {
       {
         title: "Login Issue",
         description: "I can't log into my account using my email.",
-        status: "open",
+        status: "open", // ✅ matches schema enum
         priority: "medium",
         userId: user._id,
         supportId: null,
@@ -28,7 +28,7 @@ async function createSampleTickets() {
       {
         title: "Payment Failure",
         description: "My payment did not go through for the premium plan.",
-        status: "in-progress",
+        status: "in-progress", // ✅ matches schema enum
         priority: "high",
         userId: user._id,
         supportId: support ? support._id : null,
@@ -36,7 +36,7 @@ async function createSampleTickets() {
       {
         title: "Feature Request",
         description: "It would be great to have dark mode in the UI.",
-        status: "closed",
+        status: "closed", // ✅ matches schema enum
         priority: "low",
         userId: user._id,
         supportId: support ? support._id : null,
