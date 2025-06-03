@@ -1,7 +1,6 @@
 const config = require("config");
 const jwt = require("jsonwebtoken");
 const User = require("./../models/user");
-
 async function isLoggedIn(req, res, next) {
   console.log("Request headers:", req.headers);
 

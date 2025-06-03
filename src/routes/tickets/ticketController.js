@@ -207,7 +207,7 @@ module.exports = {
       }
 
       await Ticket.findByIdAndDelete(req.params.id);
-      return res.status(204).send();
+      return res.status(200).send();
     } catch (error) {
       console.error("Error deleting ticket:", error);
       return res.status(500).json({
