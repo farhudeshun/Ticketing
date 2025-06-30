@@ -7,22 +7,37 @@ const { assignToSupportDto } = require("../../dto/assignToSupport.dto");
 const { adminUpdateTicketDto } = require("../../dto/adminUpdateTicket.dto");
 
 /**
- * @typedef Ticket
- * @property {string} title.required - Title of the ticket
- * @property {string} description.required - Description of the issue
- * @property {string} status - Status of the ticket (open, in-progress, closed)
- * @property {string} user - User who created the ticket
- * @property {string} support - Support staff assigned
- * @property {string} createdAt - Date of creation
+ * @swagger
+ * tags:
+ *   name: Tickets
+ *   description: Ticket management and operations
  */
 
 /**
- * @route POST /tickets/create
- * @group Tickets - Ticket management
- * @security bearerAuth
- * @param {Ticket.model} body.body.required - Ticket creation data
- * @returns {Ticket.model} 200 - Ticket created successfully
- * @returns {Error} 400 - Validation error
+ * @swagger
+ * /tickets/create:
+ *   post:
+ *     summary: Create a new ticket
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateTicketDto'
+ *     responses:
+ *       201:
+ *         description: Ticket created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
  */
 router.post(
   "/create",
@@ -32,31 +47,88 @@ router.post(
 );
 
 /**
- * @route GET /tickets/my-tickets
- * @group Tickets - Ticket management
- * @security bearerAuth
- * @returns {Array.<Ticket>} 200 - List of tickets for logged-in user
+ * @swagger
+ * /tickets/my-tickets:
+ *   get:
+ *     summary: Get tickets for the logged-in user
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of user's tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Ticket'
+ *       401:
+ *         description: Unauthorized
  */
 router.get("/my-tickets", isLoggedIn, TicketController.getMyTickets);
 
 /**
- * @route GET /tickets/{id}
- * @group Tickets - Ticket management
- * @security bearerAuth
- * @param {string} id.path.required - Ticket ID
- * @returns {Ticket.model} 200 - Ticket details
- * @returns {Error} 404 - Ticket not found
+ * @swagger
+ * /tickets/{id}:
+ *   get:
+ *     summary: Get ticket by ID
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Ticket details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Ticket not found
  */
 router.get("/:id", isLoggedIn, TicketController.getTicketById);
 
 /**
- * @route PUT /tickets/{id}
- * @group Tickets - Admin operations
- * @security bearerAuth
- * @param {string} id.path.required - Ticket ID
- * @param {Ticket.model} body.body.required - Updated ticket data
- * @returns {Ticket.model} 200 - Ticket updated successfully
- * @returns {Error} 404 - Ticket not found
+ * @swagger
+ * /tickets/{id}:
+ *   put:
+ *     summary: Admin updates a ticket
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AdminUpdateTicketDto'
+ *     responses:
+ *       200:
+ *         description: Ticket updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: Ticket not found
  */
 router.put(
   "/:id",
@@ -67,29 +139,88 @@ router.put(
 );
 
 /**
- * @route DELETE /tickets/{id}
- * @group Tickets - Admin operations
- * @security bearerAuth
- * @param {string} id.path.required - Ticket ID
- * @returns {object} 200 - Deletion success message
+ * @swagger
+ * /tickets/{id}:
+ *   delete:
+ *     summary: Admin deletes a ticket
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: Ticket deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: Ticket not found
  */
 router.delete("/:id", isLoggedIn, isAdmin, TicketController.deleteTicket);
 
 /**
- * @route GET /tickets
- * @group Tickets - Admin operations
- * @security bearerAuth
- * @returns {Array.<Ticket>} 200 - List of all tickets
+ * @swagger
+ * /tickets:
+ *   get:
+ *     summary: Admin fetches all tickets
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all tickets
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Ticket'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
  */
 router.get("/", isLoggedIn, isAdmin, TicketController.getAllTickets);
 
 /**
- * @route POST /tickets/{ticketId}/assign
- * @group Tickets - Admin operations
- * @security bearerAuth
- * @param {string} ticketId.path.required - Ticket ID
- * @param {object} body.body.required - { supportId: string }
- * @returns {object} 200 - Support assigned successfully
+ * @swagger
+ * /tickets/{ticketId}/assign:
+ *   post:
+ *     summary: Admin assigns a support staff to a ticket
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: ticketId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AssignToSupportDto'
+ *     responses:
+ *       200:
+ *         description: Support assigned successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: Ticket or support user not found
  */
 router.post(
   "/:ticketId/assign",
@@ -100,11 +231,32 @@ router.post(
 );
 
 /**
- * @route POST /tickets/{ticketId}/unassign
- * @group Tickets - Admin operations
- * @security bearerAuth
- * @param {string} ticketId.path.required - Ticket ID
- * @returns {object} 200 - Support unassigned successfully
+ * @swagger
+ * /tickets/{ticketId}/unassign:
+ *   post:
+ *     summary: Admin unassigns support from a ticket
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: ticketId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Support unassigned successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: Ticket not found
  */
 router.post(
   "/:ticketId/unassign",

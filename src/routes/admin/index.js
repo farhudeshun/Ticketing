@@ -5,6 +5,13 @@ const { isLoggedIn, isAdmin } = require("../../middlewares/auth");
 
 /**
  * @swagger
+ * tags:
+ *   name: Admin
+ *   description: Admin dashboard and operations
+ */
+
+/**
+ * @swagger
  * /admin/:
  *   get:
  *     tags: [Admin]
@@ -14,6 +21,14 @@ const { isLoggedIn, isAdmin } = require("../../middlewares/auth");
  *     responses:
  *       200:
  *         description: Dashboard accessed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Admin dashboard
  */
 router.get("/", isLoggedIn, isAdmin, controller.dashboard);
 
@@ -37,14 +52,14 @@ router.get("/", isLoggedIn, isAdmin, controller.dashboard);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               role:
- *                 type: string
- *                 example: support
+ *             $ref: '#/components/schemas/UpdateUserRoleDto'
  *     responses:
  *       200:
  *         description: User role updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
  */
 router.put("/users/:id/role", isLoggedIn, isAdmin, controller.updateUserRole);
 
@@ -64,7 +79,7 @@ router.put("/users/:id/role", isLoggedIn, isAdmin, controller.updateUserRole);
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/definitions/Ticket'
+ *                 $ref: '#/components/schemas/Ticket'
  */
 router.get("/tickets", isLoggedIn, isAdmin, controller.getAllTickets);
 
@@ -88,15 +103,14 @@ router.get("/tickets", isLoggedIn, isAdmin, controller.getAllTickets);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [open, in-progress, closed]
- *                 example: in-progress
+ *             $ref: '#/components/schemas/UpdateTicketStatusDto'
  *     responses:
  *       200:
  *         description: Ticket status updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Ticket'
  */
 router.put(
   "/tickets/:id/status",

@@ -1,7 +1,7 @@
 const { body } = require("express-validator");
 
 exports.adminUpdateTicketDto = [
-  body("subject").optional().isString(),
+  body("title").optional().isString(),
   body("description").optional().isString(),
   body("priority")
     .optional()

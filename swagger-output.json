@@ -6,7 +6,29 @@
     "version": "1.0.0"
   },
   "host": "localhost:3000",
-  "basePath": "/",
+  "basePath": "/api/v1",
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Authentication routes"
+    },
+    {
+      "name": "Admin",
+      "description": "Admin dashboard and operations"
+    },
+    {
+      "name": "Tickets",
+      "description": "Ticket management and admin operations"
+    },
+    {
+      "name": "Users",
+      "description": "User management"
+    },
+    {
+      "name": "User",
+      "description": "Authenticated user endpoints"
+    }
+  ],
   "schemes": [
     "http",
     "https"
@@ -16,7 +38,7 @@
       "type": "apiKey",
       "name": "Authorization",
       "in": "header",
-      "description": "Enter your bearer token in the format **Bearer &lt;token>**"
+      "description": "Enter your JWT token in format: Bearer &lt;token&gt;"
     }
   },
   "paths": {
@@ -392,6 +414,18 @@
     "/api/v1/users/": {
       "get": {
         "description": "",
+        "parameters": [
+          {
+            "name": "slice(7",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -994,10 +1028,5 @@
         }
       }
     }
-  },
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ]
+  }
 }

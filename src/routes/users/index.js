@@ -4,68 +4,189 @@ const controller = require("./controller");
 const { isLoggedIn, isAdmin } = require("../../middlewares/auth");
 
 /**
- * @route GET /users/
- * @summary Get all users (Admin only)
- * @tags Users
- * @security bearerAuth
- * @returns {array<object>} 200 - List of all users
+ * @swagger
+ * tags:
+ *   name: Users
+ *   description: User management
  */
-router.get("/", isAdmin, controller.getAllUsers);
 
 /**
- * @route GET /users/{id}
- * @summary Get user by ID
- * @tags Users
- * @security bearerAuth
- * @param {string} id.path.required - User ID
- * @returns {object} 200 - User object
- * @returns {404} 404 - User not found
+ * @swagger
+ * /users/:
+ *   get:
+ *     summary: Get all users (Admin Only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized (missing/invalid token)
+ *       403:
+ *         description: Forbidden (not admin)
+ */
+router.get("/", isLoggedIn, isAdmin, controller.getAllUsers);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
  */
 router.get("/:id", isLoggedIn, controller.getUserById);
 
 /**
- * @route POST /users/
- * @summary Create a new user (Admin only)
- * @tags Users
- * @security bearerAuth
- * @param {object} request.body.required - User creation data
- * @returns {object} 201 - Created user object
- * @returns {400} 400 - Validation error
+ * @swagger
+ * /users/:
+ *   post:
+ *     summary: Create a new user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateUserDto'
+ *     responses:
+ *       201:
+ *         description: User created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
  */
 router.post("/", isLoggedIn, isAdmin, controller.createUser);
 
 /**
- * @route PUT /users/{id}
- * @summary Update entire user (Admin only)
- * @tags Users
- * @security bearerAuth
- * @param {string} id.path.required - User ID
- * @param {object} request.body.required - Updated user data
- * @returns {object} 200 - Updated user object
- * @returns {404} 404 - User not found
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update entire user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserDto'
+ *     responses:
+ *       200:
+ *         description: Updated user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: User not found
  */
 router.put("/:id", isLoggedIn, isAdmin, controller.updateUser);
 
 /**
- * @route DELETE /users/{id}
- * @summary Delete a user (Admin only)
- * @tags Users
- * @security bearerAuth
- * @param {string} id.path.required - User ID
- * @returns {204} 204 - No content (success)
- * @returns {404} 404 - User not found
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       204:
+ *         description: User deleted
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: User not found
  */
 router.delete("/:id", isLoggedIn, isAdmin, controller.deleteUser);
 
 /**
- * @route PATCH /users/{id}
- * @summary Partially update a user (Admin only)
- * @tags Users
- * @security bearerAuth
- * @param {string} id.path.required - User ID
- * @param {object} request.body.required - Partial user data
- * @returns {object} 200 - Updated user object
- * @returns {404} 404 - User not found
+ * @swagger
+ * /users/{id}:
+ *   patch:
+ *     summary: Partially update a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateUserDto'
+ *     responses:
+ *       200:
+ *         description: User updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (not admin)
+ *       404:
+ *         description: User not found
  */
 router.patch("/:id", isLoggedIn, isAdmin, controller.patchUser);
 

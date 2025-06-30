@@ -1,12 +1,12 @@
 const { body } = require("express-validator");
 
 exports.createTicketDto = [
-  body("subject")
+  body("title")
     .trim()
     .notEmpty()
-    .withMessage("Subject is required")
+    .withMessage("Title is required")
     .isLength({ max: 100 })
-    .withMessage("Subject can be at most 100 characters long"),
+    .withMessage("Title can be at most 100 characters long"),
 
   body("description")
     .trim()

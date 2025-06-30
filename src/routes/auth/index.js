@@ -5,6 +5,13 @@ const validator = require("./validator");
 
 /**
  * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication routes
+ */
+
+/**
+ * @swagger
  * /auth/register:
  *   post:
  *     tags: [Auth]
@@ -14,7 +21,7 @@ const validator = require("./validator");
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/definitions/RegisterUser'
+ *             $ref: '#/components/schemas/RegisterUser'
  *     responses:
  *       201:
  *         description: User successfully registered
@@ -26,6 +33,8 @@ const validator = require("./validator");
  *                 message:
  *                   type: string
  *                   example: Registration successful
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
  */
 router.post(
   "/register",
@@ -45,7 +54,7 @@ router.post(
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/definitions/LoginUser'
+ *             $ref: '#/components/schemas/LoginUser'
  *     responses:
  *       200:
  *         description: Login successful
@@ -57,6 +66,8 @@ router.post(
  *                 token:
  *                   type: string
  *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6...
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
  */
 router.post(
   "/login",
